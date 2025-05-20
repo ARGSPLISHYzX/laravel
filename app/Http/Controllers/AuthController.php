@@ -11,47 +11,59 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-public function login(LoginRequest $request)
-{
-    $credentials = $request->only('username', 'password');
+    public function login(LoginRequest $request)
+    {
+        $credentials = $request->only('username', 'password');
 
-    if (!Auth::attempt($credentials)) {
-        return response()->json(['message' => 'Invalid credentials'], 401);
+        if (!Auth::attempt($credentials)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        }
+
+        $user = Auth::user();
+
+        $maxTokens = env('MAX_ACTIVE_TOKENS', 5);
+
+        if ($user->tokens()->count() >= $maxTokens) {
+            $oldest = $user->tokens()->orderBy('created_at')->first();
+            if ($oldest) {
+                $oldest->delete();
+            }
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json(new LoginResourceDTO($token), 200);
     }
-
-    $user = Auth::user();
-    $token = $this->handleToken($user);
-
-    return response()->json(new LoginResourceDTO($token), 200);
-}
 
     public function register(RegisterRequest $request)
     {
-        try {
-            $data = $request->validated();
+        $data = $request->validated();
+        $user = User::create([
+            'username' => $data['username'],
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+            'birthday' => $data['birthday'],
+        ]);
 
-            $user = User::create([
-                'username' => $data['username'],
-                'email' => $data['email'],
-                'password' => Hash::make($data['password']),
-                'birthday' => $data['birthday'],
-            ]);
+        $maxTokens = env('MAX_ACTIVE_TOKENS', 5);
 
-            $token = $this->handleToken($user);
-
-            return response()->json((new RegisterResourceDTO(
-                $user->username,
-                $user->email,
-                $user->birthday
-            ))->toArray() + ['token' => $token], 201);
-
-        } catch (ValidationException $e) {
-            return response()->json($e->errors(), 422);
+        if ($user->tokens()->count() >= $maxTokens) {
+            $oldest = $user->tokens()->orderBy('created_at')->first();
+            if ($oldest) {
+                $oldest->delete();
+            }
         }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json((new RegisterResourceDTO(
+            $user->username,
+            $user->email,
+            $user->birthday
+        ))->toArray() + ['token' => $token], 201);
     }
 
     public function me(Request $request)
@@ -112,23 +124,5 @@ public function login(LoginRequest $request)
         ]);
 
         return response()->json(['message' => 'Password changed successfully'], 200);
-    }
-
-    protected function handleToken(User $user): string
-    {
-        $maxTokens = env('MAX_ACTIVE_TOKENS', 5);
-
-        $user->tokens()
-            ->where('created_at', '<=', now()->subMinutes(env('SANCTUM_TOKEN_EXP', 60)))
-            ->delete();
-
-        if ($user->tokens()->count() >= $maxTokens) {
-            $oldest = $user->tokens()->orderBy('created_at')->first();
-            if ($oldest) {
-                $oldest->delete();
-            }
-        }
-
-        return $user->createToken('auth_token')->plainTextToken;
     }
 }

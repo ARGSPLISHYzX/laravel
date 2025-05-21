@@ -10,7 +10,7 @@ class RegisterRequest extends FormRequest
     }
     public function rules()
     {
-    return [
+        return [
             'username' => [
                 'required',
                 'string',

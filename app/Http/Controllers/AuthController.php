@@ -11,7 +11,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-
 class AuthController extends Controller
 {
     public function login(LoginRequest $request)
@@ -23,21 +22,10 @@ class AuthController extends Controller
         }
 
         $user = Auth::user();
-
-        $maxTokens = env('MAX_ACTIVE_TOKENS', 5);
-
-        if ($user->tokens()->count() >= $maxTokens) {
-            $oldest = $user->tokens()->orderBy('created_at')->first();
-            if ($oldest) {
-                $oldest->delete();
-            }
-        }
-
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json(new LoginResourceDTO($token), 200);
     }
-
     public function register(RegisterRequest $request)
     {
         $data = $request->validated();
@@ -48,15 +36,6 @@ class AuthController extends Controller
             'birthday' => $data['birthday'],
         ]);
 
-        $maxTokens = env('MAX_ACTIVE_TOKENS', 5);
-
-        if ($user->tokens()->count() >= $maxTokens) {
-            $oldest = $user->tokens()->orderBy('created_at')->first();
-            if ($oldest) {
-                $oldest->delete();
-            }
-        }
-
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json((new RegisterResourceDTO(
@@ -65,7 +44,6 @@ class AuthController extends Controller
             $user->birthday
         ))->toArray() + ['token' => $token], 201);
     }
-
     public function me(Request $request)
     {
         $user = $request->user();
@@ -76,25 +54,21 @@ class AuthController extends Controller
             $user->birthday
         ));
     }
-
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Logged out successfully'], 200);
     }
-
     public function tokens(Request $request)
     {
         $tokens = $request->user()->tokens()->pluck('name');
         return response()->json(['tokens' => $tokens]);
     }
-
     public function logoutAll(Request $request)
     {
         $request->user()->tokens()->delete();
         return response()->json(['message' => 'All tokens revoked'], 200);
     }
-
     public function changePassword(Request $request)
     {
         $request->validate([
@@ -111,18 +85,16 @@ class AuthController extends Controller
                 'required',
                 'string',
                 'min:8',
-                'regex:/[a-z]/',
-                'regex:/[A-Z]/',
-                'regex:/[0-9]/',
+                'regex:/[a-z]/',      
+                'regex:/[A-Z]/',      
+                'regex:/[0-9]/',      
                 'regex:/[@$!%*?&#]/',
             ],
         ]);
-
         $user = $request->user();
         $user->update([
             'password' => Hash::make($request->input('new_password')),
         ]);
-
         return response()->json(['message' => 'Password changed successfully'], 200);
     }
 }

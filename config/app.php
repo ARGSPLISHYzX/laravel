@@ -123,4 +123,5 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'two_factor_code_expiration' => env('TWO_FACTOR_CODE_EXPIRATION', 10),
 ];

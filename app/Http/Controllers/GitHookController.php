@@ -2,8 +2,6 @@
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Storage;
 class GitHookController extends Controller
 {
     public function handle(Request $request)
@@ -12,7 +10,6 @@ class GitHookController extends Controller
             return response()->json(['message' => 'Update is already in progress. Please try again later.'], 423);
         }
         $this->lockUpdate();
-
         try {
             $secretKey = $request->input('secret_key');
             if ($secretKey !== config('app.git_secret_key')) {

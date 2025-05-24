@@ -135,7 +135,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'password' => 'required|string',
-            'enable' => 'required|boolean',
+            'enable' => 'required|boolean',wfwfwfw
         ]);
         $user = $request->user();
         if (!Hash::check($request->input('password'), $user->password)) {

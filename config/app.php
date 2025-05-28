@@ -125,4 +125,10 @@ return [
 
     'two_factor_code_expiration' => env('TWO_FACTOR_CODE_EXPIRATION', 10),
     'git_secret_key' => env('GIT_SECRET_KEY'),
+
+    'report_interval_hours' => env('REPORT_INTERVAL_HOURS', 24),
+    'job_max_duration_minutes' => env('JOB_MAX_DURATION_MINUTES', 30),
+    'job_retry_delay_minutes' => env('JOB_RETRY_DELAY_MINUTES', 5),
+    'job_max_attempts' => env('JOB_MAX_ATTEMPTS', 3),
+    'max_file_size' => env('MAX_FILE_SIZE', 5242880),
 ];

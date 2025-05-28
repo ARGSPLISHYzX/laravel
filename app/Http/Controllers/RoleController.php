@@ -7,6 +7,11 @@ use App\DTO\RoleDTO;
 use App\DTO\RoleCollectionDTO;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
+use App\Services\ExportService;
+use App\Services\ImportService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Validator;
 class RoleController extends Controller
 {
     public function index(): JsonResponse
@@ -172,5 +177,30 @@ class RoleController extends Controller
             \Log::error('Error restoring role', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Failed to restore role'], 500);
         }
+    }
+    public function exportRoles(ExportService $exportService)
+    {
+        if (!auth()->user()->hasPermission('export-roles')) {
+            return response()->json(['message' => 'Permission denied'], 403);
+        }
+        $filePath = $exportService->exportRoles();
+        return Response::download($filePath)->deleteFileAfterSend(true);
+    }
+    public function importRoles(Request $request, ImportService $importService)
+    {
+        if (!auth()->user()->hasPermission('import-roles')) {
+            return response()->json(['message' => 'Permission denied'], 403);
+        }
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|file|mimes:xlsx,xls',
+            'mode' => 'required|string|in:add,update',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+        $file = $request->file('file');
+        $mode = $request->input('mode');
+        $results = $importService->importRoles($file->getPathname(), $mode);
+        return response()->json(['results' => $results]);
     }
 }

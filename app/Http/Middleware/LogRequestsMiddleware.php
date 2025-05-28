@@ -16,7 +16,7 @@ class LogRequestsMiddleware
         ]);
         $response = $next($request);
         \Log::info('LogRequestsMiddleware: Response generated', [
-            'status' => $response->status(),
+            'status' => $this->getResponseStatus($response),
             'response_body' => $this->maskSensitiveData($response->original ?? null),
             'response_headers' => $response->headers->all(),
         ]);
@@ -30,12 +30,23 @@ class LogRequestsMiddleware
             'user_id' => auth()->id(),
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
-            'response_status' => $response->status(),
+            'response_status' => $this->getResponseStatus($response),
             'response_body' => json_encode($this->maskSensitiveData($response->original ?? null)),
             'response_headers' => json_encode($response->headers->all()),
             'created_at' => now(),
         ]);
+
         return $response;
+    }
+    private function getResponseStatus($response): int
+    {
+        if (method_exists($response, 'status')) {
+            return $response->status();
+        }
+        if (method_exists($response, 'getStatusCode')) {
+            return $response->getStatusCode();
+        }
+        return 200;
     }
     private function maskSensitiveData($data)
     {

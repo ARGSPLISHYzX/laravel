@@ -60,6 +60,19 @@ return [
             'report' => false,
         ],
 
+        'avatar' => [
+        'driver' => 'local',
+        'root' => storage_path('app/public/avatars'),
+        'url' => env('APP_URL').'/storage/avatars',
+        'visibility' => 'public',
+        ],
+        
+        'originals' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/originals'),
+            'visibility' => 'private',
+        ],
+
     ],
 
     /*
@@ -76,5 +89,4 @@ return [
     'links' => [
         public_path('storage') => storage_path('app/public'),
     ],
-
 ];
